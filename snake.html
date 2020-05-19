@@ -1,0 +1,237 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>SnakeGame</title>
+    <script src="jquery-3.4.0.min.js"></script>
+    <style>
+        body {
+            background-color: lightgrey;
+        }
+
+        #mycanvas {
+            width: 600px;
+            height: 580px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        #title_1 {
+            font-size: 35px;
+            text-align: center;
+        }
+
+        #score_1 {
+            font-size: 25px;
+            color: blue;
+            text-align: center;
+        }
+
+        #re,
+        #conform {
+            border: 0;
+            background-color: black;
+            color: white;
+            font-size: 20px;
+            padding: 5px 20px;
+        }
+
+        #re:hover {
+            background-color: white;
+            color: black;
+        }
+
+        label {
+            font-size: 20px;
+        }
+
+        #speed1 {
+            width: 100px;
+            font-size: 20px;
+        }
+
+        .tobig {
+            transform: scale(6);
+        }
+
+    </style>
+</head>
+
+<body>
+    <center>
+        <div id="title_1">Snake Game!</div>
+        <div id="score_1">Score : 0</div>
+        <canvas id="mycanvas"></canvas>
+        <label>請輸入速度(200~10)</label>
+        <input type="text" id="speed1" value="200">
+        <input type="button" id="conform" value="StartGamr" onclick="getval()" />
+        <input type="button" id="re" value="ReLoad Game" />
+    </center>
+    <script>
+        var canvas1 = document.getElementById("mycanvas"); //讀取id直
+        var ctx = canvas1.getContext("2d");
+        ctx.translate(0.5, 0.5);
+        var cvsw = canvas1.width;
+        var cvsh = canvas1.height;
+        var snakew = 10;
+        var snakeh = 10;
+        var temp = 0;
+        var bgd = new Image(); //背景
+        var mySound;
+        bgd.src = "bg.jpg";
+        //分數
+        var score = 0;
+        //方向
+        var direction = " ";
+        //讀鍵盤上下左右
+        document.addEventListener("keydown", getdirection);
+
+        function getdirection(e) {
+            if (e.keyCode == 37 && direction != "right") {
+                direction = "left";
+            } else if (e.keyCode == 38 && direction != "down") {
+                direction = "up";
+            } else if (e.keyCode == 39 && direction != "left") {
+                direction = "right";
+            } else if (e.keyCode == 40 && direction != "up") {
+                direction = "down";
+            }
+        }
+        //創蛇
+        var len = 1;
+        var snake = [];
+        //初始
+        for (var i = len - 1; i >= 0; i--) {
+            snake.push({
+                x: i,
+                y: 0
+            });
+        }
+        //建立food物件 裡面有x, y屬性
+        var food = {
+            x: Math.round(Math.random() * (cvsw / snakew - 2)),
+            y: Math.round(Math.random() * (cvsh / snakeh - 2))
+        };
+        //畫出食物
+        function drawfood(x, y) {
+            ctx.fillStyle = "red";
+            ctx.fillRect(x * snakew, y * snakew, snakew, snakeh);
+            ctx.strokeRect(x * snakew, y * snakew, snakew, snakeh);
+        }
+        //撞到自己
+        function collision(x, y, array) {
+            for (var i = 0; i < array.length; i++) {
+                if (x == array[i].x && y == array[i].y) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        //聲音
+        function sound(src) {
+            this.sound1 = document.createElement("audio");
+            this.sound1.src = src;
+            this.sound1.setAttribute("preload", "auto");
+            this.sound1.setAttribute("controls", "none");
+            this.sound1.style.display = "none";
+            document.body.appendChild(this.sound1);
+            this.play = function() {
+                this.sound1.play();
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = "black";
+            ctx.clearRect(0, 0, cvsw, cvsh); //清除畫布
+            ctx.fillRect(0, 0, cvsw, cvsh);
+            //ctx.drawImage(bgd, 0, 0);
+            //snake為身體
+            for (var i = 0; i < snake.length; i++) {
+                var x = snake[i].x;
+                var y = snake[i].y;
+                //drawsnake(x, y);
+                if (i == 0) {
+                    ctx.fillStyle = "yellow";
+                    //座標 座標 寬度 長度
+                    ctx.fillRect(x * snakew, y * snakew, snakew, snakeh);
+                    ctx.strokeStyle = "green";
+                    ctx.strokeRect(x * snakew, y * snakew, snakew, snakeh);
+                } else {
+                    ctx.fillStyle = "white";
+                    ctx.fillRect(x * snakew, y * snakew, snakew, snakeh);
+                    ctx.strokeStyle = "green";
+                    ctx.strokeRect(x * snakew, y * snakew, snakew, snakeh);
+                }
+            }
+            //畫食物
+            drawfood(food.x, food.y);
+            // 以頭去判斷
+            var snakex = snake[0].x;
+            var snakey = snake[0].y;
+
+            if (direction == "left") {
+                snakex--;
+            } else if (direction == "up") {
+                snakey--;
+            } else if (direction == "right") {
+                snakex++;
+            } else if (direction == "down") {
+                snakey++;
+            }
+            //snake hit wall, game over
+            var score1 = document.querySelector('#score_1');
+            if (direction != " " && temp != 1) {
+                if (snakex < 0 || snakey < 0 || snakex >= cvsw / snakew || snakey >= cvsh / snakeh || collision(snakex, snakey, snake)) {
+                    temp = 1;
+                    $("#score_1").css("color", "red");
+                    $("#score_1").css("transform", "scale(5)");
+                    score1.innerHTML += "&#160;&#160;&#160;Game Over";
+                    clearInterval(set);
+                }
+                if (snakex == food.x && snakey == food.y) {
+                    food = {
+                        x: Math.round(Math.random() * (cvsw / snakew - 2)),
+                        y: Math.round(Math.random() * (cvsh / snakeh - 2))
+                    };
+                    this.newhead = {
+                        x: snakex,
+                        y: snakey
+                    };
+                    mySound.play();
+                    score++;
+                    score1.innerHTML = "Score : " + score;
+
+                } else {
+                    snake.pop(); //刪除最後面元素
+                    this.newhead = {
+                        x: snakex,
+                        y: snakey
+                    };
+                }
+                snake.unshift(this.newhead); //在開頭新增元素 配合pop用出移動效果
+            }
+        };
+
+        function getval() {
+            this.speed = parseInt(document.getElementById("speed1").value);
+            if (this.speed > 200) {
+                //console.log('Error' + this.speed);
+                alert("請輸入正確數字");
+            } else if (this.speed < 201 && this.speed > 9) {
+                alert('Set successfully. \tYour Speed is ' + this.speed);
+                mySound = new sound("apple1.mp3");
+                var set = setInterval(draw, this.speed); //周期性地调用一个函数會一直動作 ms
+            } else {
+                alert('請輸入數字');
+            }
+        }
+        var re = document.querySelector("#re");
+        re.onclick = function() {
+            location.reload();
+        }
+
+    </script>
+</body>
+
+</html>
